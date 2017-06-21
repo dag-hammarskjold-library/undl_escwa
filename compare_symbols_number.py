@@ -1,8 +1,13 @@
 
 # Library to read and write csv files
 import csv
-# Library to read and write xls files
+# Libraries to read and write xls files
 import xlrd
+import xlwt
+import sys
+reload(sys)
+sys.setdefaultencoding("utf-8")
+
 
 def get_csv_row(file_name):
 	"""
@@ -56,7 +61,15 @@ def compare_systems(sys1,sys2,id_index1,id_index2):
 			only_system1.append(identifier)
 	return in_both, only_system1, only_system2
 
-def delete_unrelevant(value,pattern):
+def write_sheet(book, sheet_name, data):
+	book = book.add_sheet(sheet_name)
+	rowx = 0
+	colx = 0
+	for row in data:
+	    for colx, value in enumerate(row):
+	        sheet.write(rowx, colx, value)
+	        rowx += 1
+	return book
 
 
 # Create a list of each csv files.
@@ -70,13 +83,6 @@ undl_escwa = delete_column(undl_escwa[1:])
 ods_escwa = delete_column(ods_escwa)
 undl_ecwa = delete_column(undl_ecwa[1:])
 ods_ecwa = delete_column(ods_ecwa)
-# Delete unrelevant columns in ods data
-ods_escwa = [row[:7] for row in ods_escwa]
-ods_ecwa = [row[:7] for row in ods_ecwa]
-
-# not in use currently, but maybe usefull later.
-ods_titles = ['symbol', 'jobar','joben','jobfr','jobru','jobes', 'other']
-undl_titles = ['001','191__a', '245','url']
 
 # merge data comming from the same system.
 ods, ods_duplicates = merge_list(ods_escwa,ods_ecwa)
@@ -90,10 +96,36 @@ ods_undl, only_ods, only_undl = compare_systems(ods,undl,0,1)
 print "Number of records in ODS: {}".format(len(ods))
 print "Number of records in UNDL1: {}".format(len(undl))
 print "Number of records in both {}".format(len(ods_undl))
-print "Number of records only in ODS {}".format(len(only_ods))
-print "Number of records only in UNDL {}".format(len(only_undl))
+print "Number of records only in ODS: {}".format(len(only_ods))
+print "Number of records only in UNDL: {}".format(len(only_undl))
 
 # Write results in an excel sheet
+# Column titles
+ods_titles = ['symbol', 'jobar','joben','jobfr','jobru','jobes', 'other']
+undl_titles = ['001','191__a', '245','url']
+both_titles = ['001','191__a', '245','url','jobar','joben','jobfr','jobru','jobes', 'other']
+
+
+
+#only_undl = [row for row in undl if row[1] in only_undl]
+#only_ods =  [row for row in ods if row[0] in only_ods]
+book = xlwt.Workbook()
+sheet1 = book.add_sheet('odsonly')
+for i, l in enumerate(only_ods):
+    for j, col in enumerate(l):
+        sheet1.write(i, j, col)
+
+sheet2 = book.add_sheet('undlonly')
+for i, l in enumerate(only_undl):
+    for j, col in enumerate(l):
+        sheet2.write(i, j, col)
+
+sheet3 = book.add_sheet('ODS_undl')
+for i, l in enumerate(ods_undl):
+    for j, col in enumerate(l):
+        sheet3.write(i, j, col)
+
+book.save('testy.xls')
 
 
 
