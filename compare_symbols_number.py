@@ -1,12 +1,7 @@
 
 # Library to read and write csv files
 import csv
-# Libraries to read and write xls files
-import xlrd
-import xlwt
-import sys
-reload(sys)
-sys.setdefaultencoding("utf-8")
+from csv import writer
 
 
 def get_csv_row(file_name):
@@ -71,6 +66,23 @@ def write_sheet(book, sheet_name, data):
 	        rowx += 1
 	return book
 
+def clean(row):
+    """
+    This function  takes a line and remove bad caracters
+    """
+    for v in row:
+    	v = v.replace("\xef\xbb\xbf","")
+    return row
+
+def write_file(data,file_name):
+	"""
+	This assigns to the variable new_csv_file a newly opened file(file_name)
+	opened in 'wb mode' ( = write in binary mode).
+	"""
+	with open(file_name,'wb') as new_csv_file:
+		wrtr = writer(new_csv_file)
+		for row in data:
+			wrtr.writerow(row)
 
 # Create a list of each csv files.
 ods_escwa = get_csv_row('data/ods_eescwa_2017_06_19.csv')
@@ -84,9 +96,16 @@ ods_escwa = delete_column(ods_escwa)
 undl_ecwa = delete_column(undl_ecwa[1:])
 ods_ecwa = delete_column(ods_ecwa)
 
+# clean:
+undl_ecwa = [clean(row) for row in undl_ecwa]
+undl_escwa = [clean(row) for row in undl_escwa]
+ods_ecwa = [clean(row) for row in ods_ecwa]
+ods_escwa = [clean(row) for row in ods_escwa]
+
 # merge data comming from the same system.
 ods, ods_duplicates = merge_list(ods_escwa,ods_ecwa)
 undl, undl_duplicates = merge_list(undl_escwa, undl_ecwa)
+
 
 # compare the systems to get list of symbol that are in both system, only in
 # ods or only in undl
@@ -99,36 +118,9 @@ print "Number of records in both {}".format(len(ods_undl))
 print "Number of records only in ODS: {}".format(len(only_ods))
 print "Number of records only in UNDL: {}".format(len(only_undl))
 
-# Write results in an excel sheet
-# Column titles
-ods_titles = ['symbol', 'jobar','joben','jobfr','jobru','jobes', 'other']
-undl_titles = ['001','191__a', '245','url']
-both_titles = ['001','191__a', '245','url','jobar','joben','jobfr','jobru','jobes', 'other']
+# Write results in distinct csv
 
-
-
-#only_undl = [row for row in undl if row[1] in only_undl]
-#only_ods =  [row for row in ods if row[0] in only_ods]
-book = xlwt.Workbook()
-sheet1 = book.add_sheet('odsonly')
-for i, l in enumerate(only_ods):
-    for j, col in enumerate(l):
-        sheet1.write(i, j, col)
-
-sheet2 = book.add_sheet('undlonly')
-for i, l in enumerate(only_undl):
-    for j, col in enumerate(l):
-        sheet2.write(i, j, col)
-
-sheet3 = book.add_sheet('ODS_undl')
-for i, l in enumerate(ods_undl):
-    for j, col in enumerate(l):
-        sheet3.write(i, j, col)
-
-book.save('testy.xls')
-
-
-
-
-
+write_file(only_ods,'export/ods_only.csv')
+write_file(only_undl,'export/undl_only.csv')
+write_file(ods_undl,'export/ods_undl.csv')
 
